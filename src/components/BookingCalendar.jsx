@@ -55,6 +55,7 @@ export default function BookingCalendar({ courtId }) {
     setMsg("");
 
     try {
+      // 1. Obtener usuario
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {
@@ -63,7 +64,8 @@ export default function BookingCalendar({ courtId }) {
         return;
       }
 
-      // Insertamos SIN precio
+      // 2. Insertar Reserva en Base de Datos
+      const endTime = getEndTime(selectedSlot);
       const { error } = await supabase
         .from('bookings')
         .insert({
@@ -71,18 +73,36 @@ export default function BookingCalendar({ courtId }) {
           user_id: user.id,
           date: selectedDate,
           start_time: selectedSlot,
-          end_time: getEndTime(selectedSlot),
-          // price: 0  <-- Ya no enviamos precio o lo mandamos en 0 si la DB lo exige
+          end_time: endTime,
         });
 
       if (error) throw error;
 
-      setMsg("✅ ¡Reserva confirmada!");
-      // Recargamos los horarios para que se bloquee el que acabamos de tomar
+      // --- NUEVO: ENVIAR EMAIL DE CONFIRMACIÓN ---
+      try {
+        await fetch('/api/send-email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userEmail: user.email,     // A quién enviamos
+            userName: user.email.split('@')[0], // Un nombre improvisado
+            date: selectedDate,
+            time: selectedSlot,
+            courtName: "Cancha Única"
+          })
+        });
+        console.log("📨 Email de confirmación enviado");
+      } catch (mailError) {
+        console.error("Error enviando email (pero la reserva se guardó):", mailError);
+        // No bloqueamos el flujo si falla el email
+      }
+      // -------------------------------------------
+
+      setMsg("✅ ¡Reserva confirmada! Te llegará un correo.");
       fetchBookedSlots();
       
       setTimeout(() => {
-        window.location.href = "/";
+        window.location.href = "/my-bookings"; // Te llevo a "Mis Reservas"
       }, 2000);
 
     } catch (error) {

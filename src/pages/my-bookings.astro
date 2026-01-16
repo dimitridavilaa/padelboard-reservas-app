@@ -73,7 +73,11 @@ import Layout from '../layouts/Layout.astro';
             const passed = diffInHours < 0; // Ya pasó el partido
             const isTooLate = diffInHours < 24 && !passed; // Faltan menos de 24h
 
-            const dateFormatted = new Date(item.date).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'short' });
+            const dateFormatted = new Date(item.date + 'T12:00:00').toLocaleDateString('es-ES', { 
+                weekday: 'long', 
+                day: 'numeric', 
+                month: 'short' 
+            });
             
             // Renderizamos
             return `
