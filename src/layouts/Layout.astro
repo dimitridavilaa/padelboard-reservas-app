@@ -20,6 +20,10 @@ const { title, userEmail } = Astro.props;
             
             <div class="flex items-center gap-4">
                 <span class="text-sm text-gray-400 hidden sm:inline">Hola, {userEmail}</span>
+
+                <a href="/my-bookings" class="text-sm text-slate-300 hover:text-white hover:underline transition mr-2">
+                    Mis Reservas
+                </a>
                 
                 <a id="admin-link" href="/admin" class="hidden text-sm text-green-400 hover:text-green-300 underline decoration-green-500/50 underline-offset-4 font-bold mr-2">
                     Admin
@@ -42,25 +46,28 @@ const { title, userEmail } = Astro.props;
 
     <script>
         import { supabase } from "../lib/supabase";
-        
-        // CAMBIO 2: Lógica para mostrar el botón Admin
-        const MY_ADMIN_EMAIL = 'miti.davila@gmail.com'; // Tu correo real
-
-        const checkUser = async () => {
-            // Preguntamos al navegador quién está conectado
+    
+        // Lógica inteligente de roles
+        const checkUserRole = async () => {
             const { data: { user } } = await supabase.auth.getUser();
 
-            // Si el correo coincide, quitamos la clase 'hidden' para mostrar el botón
-            if (user?.email === MY_ADMIN_EMAIL) {
-                const adminBtn = document.getElementById("admin-link");
-                if (adminBtn) {
-                    adminBtn.classList.remove("hidden");
+            if (user) {
+                // Consultamos la tabla 'profiles' para ver qué rol tiene este ID
+                const { data: profile } = await supabase
+                    .from('profiles')
+                    .select('role')
+                    .eq('id', user.id)
+                    .single();
+
+                // Si el rol es 'admin', mostramos el botón
+                if (profile?.role === 'admin') {
+                    const adminBtn = document.getElementById("admin-link");
+                    if (adminBtn) adminBtn.classList.remove("hidden");
                 }
             }
         };
 
-        // Ejecutamos la verificación al cargar
-        checkUser();
+        checkUserRole();
 
         // Lógica para cerrar sesión (se mantiene igual)
         const btnLogout = document.getElementById("btn-logout");
