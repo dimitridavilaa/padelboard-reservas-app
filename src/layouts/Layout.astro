@@ -1,0 +1,75 @@
+---
+import '../app.css'; // Importamos los estilos globales
+const { title, userEmail } = Astro.props;
+---
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{title} - Padel App</title>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col font-sans">
+
+    <nav class="bg-slate-800 border-b border-slate-700 p-4 shadow-md">
+        <div class="max-w-4xl mx-auto flex justify-between items-center">
+            <a href="/" class="text-xl font-bold text-green-400 flex items-center gap-2">
+                🎾 <span class="hidden sm:inline">Padel Club</span>
+            </a>
+            
+            <div class="flex items-center gap-4">
+                <span class="text-sm text-gray-400 hidden sm:inline">Hola, {userEmail}</span>
+                
+                <a id="admin-link" href="/admin" class="hidden text-sm text-green-400 hover:text-green-300 underline decoration-green-500/50 underline-offset-4 font-bold mr-2">
+                    Admin
+                </a>
+
+                <button id="btn-logout" class="text-sm bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white px-3 py-1 rounded transition border border-red-500/20">
+                    Salir
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <main class="flex-grow p-4 max-w-4xl mx-auto w-full">
+        <slot />
+    </main>
+
+    <footer class="text-center p-4 text-slate-600 text-xs mt-auto">
+        &copy; 2024 Padel App Pilot
+    </footer>
+
+    <script>
+        import { supabase } from "../lib/supabase";
+        
+        // CAMBIO 2: Lógica para mostrar el botón Admin
+        const MY_ADMIN_EMAIL = 'miti.davila@gmail.com'; // Tu correo real
+
+        const checkUser = async () => {
+            // Preguntamos al navegador quién está conectado
+            const { data: { user } } = await supabase.auth.getUser();
+
+            // Si el correo coincide, quitamos la clase 'hidden' para mostrar el botón
+            if (user?.email === MY_ADMIN_EMAIL) {
+                const adminBtn = document.getElementById("admin-link");
+                if (adminBtn) {
+                    adminBtn.classList.remove("hidden");
+                }
+            }
+        };
+
+        // Ejecutamos la verificación al cargar
+        checkUser();
+
+        // Lógica para cerrar sesión (se mantiene igual)
+        const btnLogout = document.getElementById("btn-logout");
+        if (btnLogout) {
+            btnLogout.addEventListener("click", async () => {
+                await supabase.auth.signOut();
+                window.location.href = "/login";
+            });
+        }
+    </script>
+</body>
+</html>

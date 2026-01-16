@@ -1,16 +1,72 @@
 ---
+import Layout from '../layouts/Layout.astro';
+import { supabase } from '../lib/supabase';
 
+// 1. SEGURIDAD (SSR): Verificamos si hay usuario en el servidor
+const { cookies } = Astro;
+const accessToken = cookies.get("sb-access-token");
+const refreshToken = cookies.get("sb-refresh-token");
+
+// Si usamos cookies en el futuro configuraremos esto mejor, 
+// pero para este MVP vamos a verificar la sesión del lado del cliente o usar una API simple.
+// NOTA: Para simplificar tu curva de aprendizaje hoy, 
+// vamos a dejar que la pagina cargue y verificar la sesión abajo en el script,
+// pero haremos una consulta a la DB para traer la cancha.
+
+// 2. DATOS: Traer las canchas de la Base de Datos
+const { data: courts, error } = await supabase
+  .from('courts')
+  .select('*')
+  .eq('is_active', true)
+  .order('id');
+
+// Si no hay canchas, mostramos un array vacío
+const activeCourts = courts || [];
 ---
 
-<html lang="en">
-	<head>
-		<meta charset="utf-8" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<meta name="viewport" content="width=device-width" />
-		<meta name="generator" content={Astro.generator} />
-		<title>Astro</title>
-	</head>
-	<body>
-		<h1>Astro</h1>
-	</body>
-</html>
+<Layout title="Reservas" userEmail="Usuario">
+    
+    <div class="mb-8 mt-4">
+        <h1 class="text-3xl font-bold text-white">Panel de Reservas</h1>
+        <p class="text-slate-400">Selecciona una cancha para ver disponibilidad.</p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {activeCourts.map((court) => (
+            <div class="bg-slate-800 p-6 rounded-lg border border-slate-700 shadow-lg hover:border-green-500/50 transition cursor-pointer group">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <h2 class="text-xl font-bold text-white group-hover:text-green-400 transition">{court.name}</h2>
+                        <p class="text-sm text-slate-400 mt-1">Disponible para reservar</p>
+                    </div>
+                    <span class="bg-green-500/20 text-green-400 text-xs font-bold px-2 py-1 rounded">Activa</span>
+                </div>
+                
+                <a href={`/booking/${court.id}`} class="mt-4 block w-full text-center bg-slate-700 hover:bg-green-600 hover:text-white text-slate-200 py-2 rounded transition font-medium">
+					Ver Calendario
+				</a>
+            </div>
+        ))}
+
+        {activeCourts.length === 0 && (
+            <div class="p-4 bg-yellow-500/10 border border-yellow-500/20 text-yellow-200 rounded">
+                No se encontraron canchas activas.
+            </div>
+        )}
+    </div>
+
+</Layout>
+
+<script>
+    import { supabase } from "../lib/supabase";
+
+    // Verificación de seguridad en el navegador (Client-Side Auth Guard)
+    async function checkSession() {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+            // Si no hay sesión, patada al login
+            window.location.href = "/login";
+        }
+    }
+    checkSession();
+</script>

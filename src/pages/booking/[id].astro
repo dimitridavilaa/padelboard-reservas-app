@@ -1,0 +1,33 @@
+---
+export const prerender = false;
+import Layout from '../../layouts/Layout.astro';
+import { supabase } from '../../lib/supabase';
+import BookingComponent from '../../components/BookingCalendar.jsx'; // 
+
+// 1. Obtener la ID de la URL (ej: si entras a /booking/1, id es "1")
+const { id } = Astro.params;
+
+// 2. Traer info de la cancha para poner el título
+const { data: court } = await supabase
+  .from('courts')
+  .select('*')
+  .eq('id', id)
+  .single();
+
+// Si no existe la cancha, redirigir al home
+if (!court) {
+  return Astro.redirect('/');
+}
+---
+
+<Layout title={`Reservar ${court.name}`} userEmail="Usuario">
+    <div class="mb-6">
+        <a href="/" class="text-gray-400 hover:text-white text-sm mb-4 inline-block">← Volver al inicio</a>
+        <h1 class="text-3xl font-bold text-white">📅 Reservar: <span class="text-green-400">{court.name}</span></h1>
+        <p class="text-slate-400">Selecciona fecha y hora para tu partido.</p>
+    </div>
+
+    <div class="bg-slate-800 p-6 rounded-lg border border-slate-700 shadow-lg">
+        <BookingComponent client:load courtId={id} />
+    </div>
+</Layout>

@@ -1,0 +1,109 @@
+---
+export const prerender = false;
+import Layout from '../layouts/Layout.astro';
+import { supabase } from '../lib/supabase';
+
+// 1. EL SERVIDOR SOLO TRAE DATOS (Sin verificar usuario por ahora)
+const { data: bookings } = await supabase
+  .from('bookings')
+  .select('*, courts(name)') 
+  .order('date', { ascending: true })
+  .order('start_time', { ascending: true });
+
+const list = bookings || [];
+---
+
+<Layout title="Administración">
+    <div id="admin-content" class="hidden animate-fade-in">
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-3xl font-bold text-white">Panel de Administración</h1>
+            <div class="text-slate-400 text-sm">Total reservas: {list.length}</div>
+        </div>
+
+        <div class="bg-slate-800 rounded-lg border border-slate-700 overflow-hidden">
+            <table class="w-full text-left text-sm text-slate-400">
+                <thead class="bg-slate-900 text-slate-200 uppercase font-bold">
+                    <tr>
+                        <th class="p-4">Fecha</th>
+                        <th class="p-4">Hora</th>
+                        <th class="p-4">Cancha</th>
+                        <th class="p-4 text-right">Acción</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-700">
+                    {list.map((booking: any) => (
+                        <tr class="hover:bg-slate-700/50 transition">
+                            <td class="p-4 text-white">{booking.date}</td>
+                            <td class="p-4 font-mono text-green-400">
+                                {booking.start_time.slice(0,5)} - {booking.end_time.slice(0,5)}
+                            </td>
+                            <td class="p-4">{booking.courts?.name}</td>
+                            <td class="p-4 text-right">
+                                <button 
+                                    data-id={booking.id}
+                                    class="btn-delete text-red-400 hover:text-white hover:bg-red-500/80 px-3 py-1 rounded border border-red-500/30 transition text-xs"
+                                >
+                                    Cancelar
+                                </button>
+                            </td>
+                        </tr>
+                    ))}
+                    
+                    {list.length === 0 && (
+                        <tr>
+                            <td colspan="4" class="p-8 text-center text-slate-500">
+                                No hay reservas registradas aún.
+                            </td>
+                        </tr>
+                    )}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <div id="loading-msg" class="text-center mt-20 text-slate-500">
+        Verificando permisos de administrador...
+    </div>
+
+</Layout>
+
+<script>
+    import { supabase } from "../lib/supabase";
+
+    // --- CONFIGURACIÓN ---
+    const MY_ADMIN_EMAIL = "miti.davila@gmail.com";
+    // ---------------------
+
+    const checkAdmin = async () => {
+        // 1. Preguntamos al NAVEGADOR quién es el usuario
+        const { data: { user } } = await supabase.auth.getUser();
+
+        // 2. Verificación
+        if (user?.email !== MY_ADMIN_EMAIL) {
+            // Si no es el admin, lo mandamos al inicio
+            window.location.href = "/";
+        } else {
+            // Si ES el admin, mostramos el contenido
+            const content = document.getElementById("admin-content");
+            const loading = document.getElementById("loading-msg");
+            if (content && loading) {
+                loading.style.display = "none";
+                content.classList.remove("hidden");
+            }
+        }
+    };
+
+    checkAdmin();
+
+    // Lógica para borrar reservas (igual que antes)
+    const buttons = document.querySelectorAll('.btn-delete');
+    buttons.forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+            const id = (e.target as HTMLButtonElement).dataset.id;
+            if(confirm("¿Eliminar reserva?")) {
+                const { error } = await supabase.from('bookings').delete().eq('id', id);
+                if (!error) window.location.reload();
+            }
+        });
+    });
+</script>
