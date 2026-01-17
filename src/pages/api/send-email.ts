@@ -10,9 +10,9 @@ export const POST: APIRoute = async ({ request }) => {
 
   try {
     const { data, error } = await resend.emails.send({
-      from: 'onboarding@resend.dev', // Dominio de prueba gratuito de Resend
-      to: [userEmail], // En prueba, SOLO puedes enviar a tu propio correo (el admin)
-      subject: '🎾 ¡Reserva Confirmada! - Padel Club',
+      from: 'Club Naval Padel <notificaciones@reservas.getpadelboard.com>', 
+      to: [userEmail],
+      subject: '🎾 ¡Reserva Confirmada! - Club Naval Padel',
       html: `
         <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
           <h1 style="color: #4ade80;">¡Partido Confirmado! 🎾</h1>
