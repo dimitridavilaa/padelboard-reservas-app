@@ -16,6 +16,8 @@ export default function BookingCalendar({ courtId }) {
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(false); 
   const [msg, setMsg] = useState("");
+  const todayStr = new Date().toLocaleDateString('en-CA');
+
 
   // 1. EFECTO: Cargar ocupación al cambiar fecha
   useEffect(() => {
@@ -44,7 +46,7 @@ export default function BookingCalendar({ courtId }) {
   // --- LOGICA DE FECHAS ---
   
   const changeDate = (days) => {
-    // Truco para evitar problemas de zona horaria: crear fecha desde componentes
+    // Truco para evitar problemas de zona horaria...
     const [y, m, d] = selectedDate.split('-').map(Number);
     const date = new Date(y, m - 1, d);
     
@@ -55,6 +57,9 @@ export default function BookingCalendar({ courtId }) {
                    String(date.getMonth() + 1).padStart(2, '0') + '-' + 
                    String(date.getDate()).padStart(2, '0');
     
+    // --- NUEVO: SI ES ANTES DE HOY, NO HACER NADA ---
+    if (newStr < todayStr) return; 
+
     setSelectedDate(newStr);
   };
 
@@ -145,10 +150,16 @@ export default function BookingCalendar({ courtId }) {
       {/* --- SELECTOR DE FECHA (Estilo Navy Clean) --- */}
       <div className="flex items-center justify-between bg-white p-2 rounded-xl shadow-sm border-2 border-[#3B82f6]">
         
-        {/* Flecha Izquierda (Blanca con borde Navy) */}
+        {/* Flecha Izquierda (Se bloquea si es HOY) */}
         <button 
           onClick={() => changeDate(-1)}
-          className="p-2 rounded-lg bg-white text-[#04133E] border-2 border-white hover:bg-slate-50 transition-transform active:scale-95"
+          disabled={selectedDate <= todayStr} 
+          className={`p-2 rounded-lg border-2 transition-transform active:scale-95
+            ${selectedDate <= todayStr 
+                ? 'bg-slate-50 text-slate-300 border-slate-100 cursor-not-allowed' // Estilo Bloqueado
+                : 'bg-white text-[#04133E] border-white hover:bg-slate-50'          // Estilo Normal
+            }
+          `}
         >
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-5 h-5">
             <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
@@ -160,8 +171,12 @@ export default function BookingCalendar({ courtId }) {
            {/* Input invisible para el calendario nativo */}
            <input 
               type="date" 
+              min={todayStr} // <--- ESTO BLOQUEA EL CALENDARIO DEL MÓVIL
               value={selectedDate}
-              onChange={(e) => setSelectedDate(e.target.value)}
+              onChange={(e) => {
+                  // Validación extra por seguridad
+                  if(e.target.value >= todayStr) setSelectedDate(e.target.value);
+              }}
               className="absolute inset-0 opacity-0 w-full h-full cursor-pointer z-10"
             />
            
@@ -259,7 +274,26 @@ export default function BookingCalendar({ courtId }) {
             {loading ? 'Procesando...' : 'CONFIRMAR RESERVA'}
           </button>
 
-          {msg && <p className="mt-4 text-sm font-bold text-white bg-slate-700/50 py-2 rounded animate-pulse">{msg}</p>}
+          {/* Mensaje de Estado (Éxito Verde o Error Rojo) */}
+          {msg && (
+            <div className={`mt-4 p-2 rounded-xl flex items-center justify-center gap-3 animate-fade-in border
+                ${msg.includes('✅') 
+                    ? 'bg-green-50 border-green-200'  // Estilo ÉXITO
+                    : 'bg-red-50 border-red-200'      // Estilo ERROR
+                }
+            `}>
+                {msg.includes('✅') && (
+                    <div className="bg-green-500 text-white p-1 rounded-full">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="currentColor" className="w-3 h-3">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                        </svg>
+                    </div>
+                )}
+                <span className={`font-bold text-lg ${msg.includes('✅') ? 'text-green-700' : 'text-red-600'}`}>
+                    {msg.replace('✅ ', '').replace('❌ ', '')}
+                </span>
+            </div>
+          )}
         </div>
       )}
     </div>

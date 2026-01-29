@@ -132,6 +132,9 @@ import Layout from '../layouts/Layout.astro';
                         ${!passed && !isTooLate ? `
                             <button 
                                 data-id="${item.id}"
+                                data-date="${item.date}" 
+                                data-time="${item.start_time}"
+                                data-court="${item.courts?.name || 'Cancha'}"
                                 class="btn-cancel w-full sm:w-auto group/btn flex items-center justify-center gap-2 text-sm font-bold text-red-500 hover:text-white bg-red-50 hover:bg-red-500 border border-red-100 hover:border-red-500 px-5 py-3 rounded-xl transition-all"
                             >
                                 <span>Cancelar</span>
@@ -156,24 +159,52 @@ import Layout from '../layouts/Layout.astro';
 
     const attachCancelListeners = () => {
         const buttons = document.querySelectorAll('.btn-cancel');
+        
         buttons.forEach(btn => {
+            // Usamos 'btn' directamente para asegurar que referenciamos al botón y no al span interno
             btn.addEventListener('click', async (e) => {
-                const button = e.target as HTMLButtonElement;
-                const id = button.dataset.id;
+                
+                // 1. Recopilar datos ANTES de borrar
+                const id = btn.dataset.id;
+                const date = btn.dataset.date;
+                const time = btn.dataset.time;
+                const court = btn.dataset.court;
                 
                 if(confirm("¿Seguro que quieres cancelar este partido? Se liberará el horario.")) {
-                    const originalText = button.textContent;
-                    button.textContent = "Procesando...";
-                    button.disabled = true;
+                    const originalText = btn.innerHTML;
+                    btn.innerHTML = "<span>Procesando...</span>";
+                    btn.disabled = true;
 
+                    // 2. Obtener usuario actual (para enviarle el correo)
+                    const { data: { user } } = await supabase.auth.getUser();
+
+                    // 3. Borrar de la Base de Datos
                     const { error } = await supabase.from('bookings').delete().eq('id', id);
 
                     if (!error) {
+                        // 4. ✅ ÉXITO: ENVIAR CORREO
+                        // (Hacemos el fetch sin await para no bloquear la UI)
+                        if (user) {
+                             fetch('/api/send-email', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    type: 'cancellation', // <--- Importante: Tipo cancelación
+                                    userEmail: user.email,
+                                    userName: user.email.split('@')[0],
+                                    date: date,
+                                    time: time.slice(0,5), // Cortamos los segundos "17:00:00" -> "17:00"
+                                    courtName: court
+                                })
+                            }).catch(err => console.error("Error enviando email cancelación:", err));
+                        }
+
+                        // Recargar la lista visualmente
                         loadBookings(); 
                     } else {
                         alert("Error: " + error.message);
-                        button.textContent = originalText;
-                        button.disabled = false;
+                        btn.innerHTML = originalText;
+                        btn.disabled = false;
                     }
                 }
             });
