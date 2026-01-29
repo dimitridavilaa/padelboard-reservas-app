@@ -1,82 +1,215 @@
 ---
-import '../app.css'; // Importamos los estilos globales
-const { title, userEmail } = Astro.props;
+import '../app.css';
+const { title } = Astro.props;
+const { pathname } = Astro.url;
 ---
 
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" class="bg-slate-50">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{title} - Padel App</title>
+    <title>{title} - PadelBoard</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Anton&family=Outfit:wght@300;400;700&display=swap" rel="stylesheet">
 </head>
-<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col font-sans">
+<body class="bg-slate-50 text-slate-900 min-h-screen flex flex-col font-sans">
 
-    <nav class="bg-slate-800 border-b border-slate-700 p-4 shadow-md">
-        <div class="max-w-4xl mx-auto flex justify-between items-center">
-            <a href="/" class="text-xl font-bold text-green-400 flex items-center gap-2">
-                🎾 <span class="hidden sm:inline">Padel Club</span>
-            </a>
-            
-            <div class="flex items-center gap-4">
-                <span class="text-sm text-gray-400 hidden sm:inline">Hola, {userEmail}</span>
-
-                <a href="/my-bookings" class="text-sm text-slate-300 hover:text-white hover:underline transition mr-2">
-                    Mis Reservas
-                </a>
+    {/* NAVBAR: Azul Naval (#04133E) */}
+    <nav class="bg-[#04133E] border-b border-[#04133E] shadow-md sticky top-0 z-50">
+        <div class="max-w-4xl mx-auto px-4">
+            <div class="flex justify-between items-center h-16">
                 
-                <a id="admin-link" href="/admin" class="hidden text-sm text-green-400 hover:text-green-300 underline decoration-green-500/50 underline-offset-4 font-bold mr-2">
-                    Admin
+                {/* LOGO */}
+                <a href="/" class="flex items-center hover:opacity-90 transition">
+                    <img src="/img/logo_padelboard.png" alt="PadelBoard" class="h-8 w-auto object-contain" />
                 </a>
 
-                <button id="btn-logout" class="text-sm bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white px-3 py-1 rounded transition border border-red-500/20">
-                    Salir
-                </button>
+                {/* --- 1. MENÚ DE ESCRITORIO (Visible solo en md o superior) --- */}
+                <div class="hidden md:flex items-center gap-4">
+                    
+                    {/* Opciones de Usuario Logueado */}
+                    <div id="user-menu-desktop" class="hidden items-center gap-4">
+                        <span class="text-sm text-slate-400">
+                            Hola, <span id="user-name-desktop" class="text-white font-bold">Jugador</span>
+                        </span>
+
+                        <a href="/my-bookings" class="text-sm text-slate-300 hover:text-[#3B82f6] hover:underline transition font-medium">
+                            Mis Reservas
+                        </a>
+                        
+                        <a id="admin-link-desktop" href="/admin" class="hidden text-sm text-[#3B82f6] hover:text-white underline decoration-[#3B82f6]/50 underline-offset-4 font-bold">
+                            Admin
+                        </a>
+
+                        <button id="btn-logout-desktop" class="text-sm bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white px-3 py-1.5 rounded-lg transition border border-red-500/20 font-bold ml-2">
+                            Salir
+                        </button>
+                    </div>
+
+                    {/* Botón Ingresar (Si no hay sesión) */}
+                    {pathname !== '/login' && (
+                        <a id="btn-login-desktop" href="/login" class="hidden text-sm bg-[#3B82f6] hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-bold transition shadow-lg shadow-blue-500/20">
+                            Ingresar
+                        </a>
+                    )}
+                </div>
+
+                {/* --- 2. BOTÓN HAMBURGUESA (Visible solo en Móvil) --- */}
+                <div class="flex items-center md:hidden">
+                    <button id="mobile-menu-btn" class="text-slate-300 hover:text-white focus:outline-none">
+                        <svg class="h-8 w-8" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        {/* --- 3. MENÚ MÓVIL DESPLEGABLE (Oculto por defecto) --- */}
+        <div id="mobile-menu" class="hidden md:hidden bg-[#030f33] border-t border-slate-800">
+            <div class="px-4 pt-2 pb-4 space-y-2">
+                
+                {/* Opciones Usuario Móvil */}
+                <div id="user-menu-mobile" class="hidden flex-col gap-2">
+                    <div class="py-2 border-b border-slate-800 mb-2">
+                        <span class="text-sm text-slate-400 block">Hola,</span>
+                        <span id="user-name-mobile" class="text-lg text-white font-bold block">Jugador</span>
+                    </div>
+
+                    <a href="/my-bookings" class="block px-3 py-2 rounded-md text-base font-medium text-slate-300 hover:text-white hover:bg-white/10">
+                        Mis Reservas
+                    </a>
+                    
+                    <a id="admin-link-mobile" href="/admin" class="hidden block px-3 py-2 rounded-md text-base font-bold text-[#3B82f6] hover:text-white hover:bg-white/10">
+                        Panel Admin
+                    </a>
+
+                    <button id="btn-logout-mobile" class="w-full text-left block px-3 py-2 rounded-md text-base font-medium text-red-400 hover:text-white hover:bg-red-500/20">
+                        Salir
+                    </button>
+                </div>
+
+                {/* Botón Ingresar Móvil */}
+                {pathname !== '/login' && (
+                    <a id="btn-login-mobile" href="/login" class="hidden block w-full text-center bg-[#3B82f6] text-white px-4 py-3 rounded-lg font-bold shadow-lg">
+                        Ingresar
+                    </a>
+                )}
             </div>
         </div>
     </nav>
 
-    <main class="flex-grow p-4 max-w-4xl mx-auto w-full">
+    {/* CONTENIDO PRINCIPAL */}
+    <main class="flex-grow p-4 max-w-4xl mx-auto w-full animate-fade-in">
+        
+        {/* BOTÓN VOLVER GLOBAL */}
+        {pathname !== '/' && pathname !== '/login' && (
+            <div class="mb-6">
+                <a href="/" class="inline-flex items-center gap-2 text-sm font-bold text-slate-400 hover:text-[#3B82f6] transition-colors group">
+                    <div class="p-1 bg-white border border-slate-200 rounded-lg group-hover:border-[#3B82f6] transition shadow-sm">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4 group-hover:-translate-x-0.5 transition-transform">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+                        </svg>
+                    </div>
+                    <span>Volver al inicio</span>
+                </a>
+            </div>
+        )}
+
         <slot />
     </main>
 
-    <footer class="text-center p-4 text-slate-600 text-xs mt-auto">
-        &copy; 2026 Padel App Pilot
+    <footer class="text-center p-6 text-slate-400 text-xs mt-auto border-t border-slate-200 bg-white">
+        &copy; 2026 <span class="font-bold text-[#04133E]">PadelBoard</span>
     </footer>
 
     <script>
         import { supabase } from "../lib/supabase";
-    
-        // Lógica inteligente de roles
-        const checkUserRole = async () => {
-            const { data: { user } } = await supabase.auth.getUser();
 
-            if (user) {
-                // Consultamos la tabla 'profiles' para ver qué rol tiene este ID
+        // --- LÓGICA DEL MENÚ MÓVIL ---
+        const btnMobile = document.getElementById('mobile-menu-btn');
+        const menuMobile = document.getElementById('mobile-menu');
+
+        if(btnMobile && menuMobile) {
+            btnMobile.addEventListener('click', () => {
+                menuMobile.classList.toggle('hidden');
+            });
+        }
+
+        // --- LÓGICA DE AUTENTICACIÓN (Actualiza Escritorio Y Móvil) ---
+        const initAuthUI = async () => {
+            // Elementos Escritorio
+            const userMenuDesk = document.getElementById("user-menu-desktop");
+            const loginBtnDesk = document.getElementById("btn-login-desktop");
+            const userNameDesk = document.getElementById("user-name-desktop");
+            const adminLinkDesk = document.getElementById("admin-link-desktop");
+            
+            // Elementos Móvil
+            const userMenuMob = document.getElementById("user-menu-mobile");
+            const loginBtnMob = document.getElementById("btn-login-mobile");
+            const userNameMob = document.getElementById("user-name-mobile");
+            const adminLinkMob = document.getElementById("admin-link-mobile");
+
+            // 1. Verificar sesión
+            const { data: { session } } = await supabase.auth.getSession();
+
+            if (session) {
+                // --- LOGUEADO ---
+                
+                // Mostrar menús de usuario
+                if(userMenuDesk) userMenuDesk.classList.replace("hidden", "flex");
+                if(userMenuMob) userMenuMob.classList.replace("hidden", "flex");
+
+                // Ocultar botones de ingresar
+                if(loginBtnDesk) loginBtnDesk.classList.add("hidden");
+                if(loginBtnMob) loginBtnMob.classList.add("hidden");
+
+                // Obtener datos extra (Nombre y Rol)
                 const { data: profile } = await supabase
                     .from('profiles')
-                    .select('role')
-                    .eq('id', user.id)
+                    .select('role, full_name')
+                    .eq('id', session.user.id)
                     .single();
 
-                // Si el rol es 'admin', mostramos el botón
+                const displayName = profile?.full_name || session.user.email.split('@')[0];
+
+                // Poner nombre en ambos menús
+                if(userNameDesk) userNameDesk.textContent = displayName;
+                if(userNameMob) userNameMob.textContent = displayName;
+
+                // Mostrar Admin si corresponde
                 if (profile?.role === 'admin') {
-                    const adminBtn = document.getElementById("admin-link");
-                    if (adminBtn) adminBtn.classList.remove("hidden");
+                    if(adminLinkDesk) adminLinkDesk.classList.remove("hidden");
+                    if(adminLinkMob) adminLinkMob.classList.remove("hidden");
                 }
+
+            } else {
+                // --- NO LOGUEADO ---
+                if(userMenuDesk) userMenuDesk.classList.add("hidden");
+                if(userMenuMob) userMenuMob.classList.add("hidden");
+
+                if(loginBtnDesk) loginBtnDesk.classList.remove("hidden");
+                if(loginBtnMob) loginBtnMob.classList.remove("hidden");
             }
         };
 
-        checkUserRole();
+        initAuthUI();
 
-        // Lógica para cerrar sesión (se mantiene igual)
-        const btnLogout = document.getElementById("btn-logout");
-        if (btnLogout) {
-            btnLogout.addEventListener("click", async () => {
-                await supabase.auth.signOut();
-                window.location.href = "/login";
-            });
-        }
+        // --- LOGOUT (Manejamos los dos botones) ---
+        const handleLogout = async () => {
+            await supabase.auth.signOut();
+            window.location.href = "/login";
+        };
+
+        const btnLogoutDesk = document.getElementById("btn-logout-desktop");
+        const btnLogoutMob = document.getElementById("btn-logout-mobile");
+
+        if (btnLogoutDesk) btnLogoutDesk.addEventListener("click", handleLogout);
+        if (btnLogoutMob) btnLogoutMob.addEventListener("click", handleLogout);
+
     </script>
 </body>
 </html>

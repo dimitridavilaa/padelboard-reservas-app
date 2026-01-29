@@ -1,4 +1,4 @@
-export const prerender = false; // Importante: Se ejecuta en el servidor
+export const prerender = false;
 import type { APIRoute } from 'astro';
 import { Resend } from 'resend';
 
@@ -6,14 +6,34 @@ const resend = new Resend(import.meta.env.RESEND_API_KEY);
 
 export const POST: APIRoute = async ({ request }) => {
   const body = await request.json();
-  const { userEmail, userName, date, time, courtName } = body;
+  // Agregamos 'type' a la extracción de datos
+  const { type, userEmail, userName, date, time, courtName } = body;
 
   try {
-    const { data, error } = await resend.emails.send({
-      from: 'Club Naval Padel <notificaciones@reservas.getpadelboard.com>', 
-      to: [userEmail],
-      subject: '🎾 ¡Reserva Confirmada! - Club Naval Padel',
-      html: `
+    let subject = '🎾 ¡Reserva Confirmada! - Club Naval Padel';
+    let htmlContent = '';
+
+    // --- ESCENARIO 1: CANCELACIÓN ---
+    if (type === 'cancellation') {
+       subject = '❌ Reserva Cancelada - Club Naval Padel';
+       htmlContent = `
+        <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
+          <h1 style="color: #ef4444;">Reserva Cancelada ❌</h1>
+          <p>Hola <strong>${userName || 'Jugador'}</strong>,</p>
+          <p>Te informamos que tu reserva ha sido cancelada.</p>
+          
+          <div style="background-color: #fef2f2; padding: 20px; border-radius: 8px; margin: 20px 0; border: 1px solid #fecaca;">
+            <p style="margin: 5px 0;">📅 <strong>Fecha original:</strong> ${date}</p>
+            <p style="margin: 5px 0;">⏰ <strong>Hora:</strong> ${time}</p>
+          </div>
+
+          <p style="color: #6b7280; font-size: 12px; margin-top: 30px;">Si crees que es un error, por favor contáctanos.</p>
+        </div>
+      `;
+    } 
+    // --- ESCENARIO 2: CONFIRMACIÓN (Por defecto) ---
+    else {
+       htmlContent = `
         <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
           <h1 style="color: #4ade80;">¡Partido Confirmado! 🎾</h1>
           <p>Hola <strong>${userName || 'Jugador'}</strong>,</p>
@@ -28,7 +48,14 @@ export const POST: APIRoute = async ({ request }) => {
           <p>Recuerda que puedes cancelar hasta 24 horas antes desde la sección "Mis Reservas".</p>
           <p style="color: #6b7280; font-size: 12px; margin-top: 30px;">Nos vemos en la cancha,<br>El equipo de Padel Club</p>
         </div>
-      `,
+      `;
+    }
+
+    const { data, error } = await resend.emails.send({
+      from: 'Club Naval Padel <notificaciones@reservas.getpadelboard.com>', 
+      to: [userEmail],
+      subject: subject,
+      html: htmlContent,
     });
 
     if (error) {
@@ -36,7 +63,7 @@ export const POST: APIRoute = async ({ request }) => {
     }
 
     return new Response(JSON.stringify({ message: "Email enviado" }), { status: 200 });
-  } catch (e) {
+  } catch (e: any) { // Type 'any' para evitar errores de TS en el catch
     return new Response(JSON.stringify({ error: e.message }), { status: 500 });
   }
 };

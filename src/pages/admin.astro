@@ -2,117 +2,571 @@
 export const prerender = false;
 import Layout from '../layouts/Layout.astro';
 import { supabase } from '../lib/supabase';
-
-// 1. EL SERVIDOR SOLO TRAE DATOS (Sin verificar usuario por ahora)
-const { data: bookings } = await supabase
-  .from('bookings')
-  .select('*, courts(name)') 
-  .order('date', { ascending: true })
-  .order('start_time', { ascending: true });
-
-const list = bookings || [];
 ---
 
 <Layout title="Administración">
-    <div id="admin-content" class="hidden animate-fade-in">
-        <div class="flex justify-between items-center mb-6">
-            <h1 class="text-3xl font-bold text-white">Panel de Administración</h1>
-            <div class="text-slate-400 text-sm">Total reservas: {list.length}</div>
+    <div id="admin-content" class="hidden animate-fade-in min-h-screen flex flex-col p-4 relative">
+        
+        {/* TÍTULO */}
+        <div class="mb-4 pl-2 border-l-4 border-[#3B82f6]">
+            <h1 class="text-3xl font-bold text-[#04133E] tracking-tight">Padel Administrador</h1>
+            <p class="text-slate-500 text-sm">Panel de control y agenda</p>
         </div>
 
-        <div class="bg-slate-800 rounded-lg border border-slate-700 overflow-hidden">
-            <table class="w-full text-left text-sm text-slate-400">
-                <thead class="bg-slate-900 text-slate-200 uppercase font-bold">
-                    <tr>
-                        <th class="p-4">Fecha</th>
-                        <th class="p-4">Hora</th>
-                        <th class="p-4">Cancha</th>
-                        <th class="p-4 text-right">Acción</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-700">
-                    {list.map((booking: any) => (
-                        <tr class="hover:bg-slate-700/50 transition">
-                            <td class="p-4 text-white">{booking.date}</td>
-                            <td class="p-4 font-mono text-green-400">
-                                {booking.start_time.slice(0,5)} - {booking.end_time.slice(0,5)}
-                            </td>
-                            <td class="p-4">{booking.courts?.name}</td>
-                            <td class="p-4 text-right">
-                                <button 
-                                    data-id={booking.id}
-                                    class="btn-delete text-red-400 hover:text-white hover:bg-red-500/80 px-3 py-1 rounded border border-red-500/30 transition text-xs"
-                                >
-                                    Cancelar
-                                </button>
-                            </td>
-                        </tr>
-                    ))}
-                    
-                    {list.length === 0 && (
+        {/* ENCABEZADO (Fondo Blanco) */}
+        <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4 bg-white p-4 rounded-xl border border-slate-200 shadow-sm sticky top-0 z-10">
+            
+            <div class="flex items-center gap-4">
+                {/* Botones de Navegación (Gris claro) */}
+                <button id="btn-prev" class="p-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-[#04133E] border border-slate-200 transition">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+                    </svg>
+                </button>
+
+                {/* Date Picker (Fondo Blanco) */}
+                <div class="relative group">
+                    <input 
+                        type="date" 
+                        id="date-picker"
+                        class="bg-white text-[#04133E] font-bold border-2 border-slate-200 rounded-lg px-6 py-2 text-center focus:border-[#04133E] outline-none cursor-pointer appearance-none min-w-[180px]"
+                    />
+                    <div 
+                        id="date-label"
+                        class="absolute -bottom-3 left-1/2 transform -translate-x-1/2 bg-[#04133E] px-2 text-[10px] font-bold tracking-widest uppercase text-[#3B82f6] rounded-full shadow-sm z-20 pointer-events-none whitespace-nowrap"
+                    >
+                        HOY
+                    </div>
+                </div>
+
+                <button id="btn-next" class="p-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-[#04133E] border border-slate-200 transition">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+                    </svg>
+                </button>
+            </div>
+
+            {/* Botón Nueva Reserva (Azul Naval) */}
+            <button 
+                id="btn-open-modal"
+                class="bg-[#3B82f6] hover:bg-blue-900 text-white font-bold py-2.5 px-6 rounded-lg text-sm transition shadow-lg flex items-center gap-2 active:scale-95"
+            >
+                <span class="text-xl leading-none text-white font-black">+</span> Nueva Reserva
+            </button>
+        </div>
+
+        {/* TABLA (Fondo Blanco) */}
+        <div class="bg-white rounded-lg border border-slate-200 overflow-hidden shadow-xl flex-grow relative min-h-[400px]">
+            <div id="table-loader" class="absolute inset-0 bg-white/90 z-20 flex flex-col items-center justify-center hidden backdrop-blur-sm transition-opacity">
+                <div class="w-10 h-10 border-4 border-[#04133E] border-t-transparent rounded-full animate-spin mb-3"></div>
+                <p class="text-[#04133E] text-sm font-medium animate-pulse">Actualizando agenda...</p>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm text-slate-600">
+                    <thead class="bg-slate-50 text-[#04133E] uppercase font-bold text-xs tracking-wider sticky top-0 z-10 shadow-sm border-b border-slate-200">
                         <tr>
-                            <td colspan="4" class="p-8 text-center text-slate-500">
-                                No hay reservas registradas aún.
-                            </td>
+                            <th class="p-4 w-32">Hora</th>
+                            <th class="p-4 w-40">Cancha</th>
+                            <th class="p-4">Jugador</th>
+                            <th class="p-4 text-right w-32">Acción</th>
                         </tr>
-                    )}
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody id="bookings-list" class="divide-y divide-slate-100"></tbody>
+                </table>
+            </div>
+
+            <div id="empty-state" class="hidden flex flex-col items-center justify-center py-20 text-slate-400">
+                <div class="bg-slate-100 p-6 rounded-full mb-4">
+                    <span class="text-4xl grayscale opacity-50">📅</span>
+                </div>
+                <p class="text-lg font-medium text-[#04133E]">Agenda libre</p>
+                <p class="text-sm">No hay reservas para este día.</p>
+            </div>
         </div>
     </div>
-    
-    <div id="loading-msg" class="text-center mt-20 text-slate-500">
-        Verificando permisos de administrador...
+
+    {/* MODAL (Fondo Blanco) */}
+    <div id="modal-overlay" class="fixed inset-0 bg-[#04133E]/50 z-50 hidden backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
+        <div class="bg-white rounded-xl border border-slate-200 shadow-2xl w-full max-w-md overflow-hidden transform transition-all scale-100">
+            <div class="bg-slate-50 p-4 border-b border-slate-200 flex justify-between items-center">
+                <h3 class="text-[#04133E] font-bold text-lg flex items-center gap-2">
+                    <span class="text-[#04133E]">+</span> Nueva Reserva Manual
+                </h3>
+                <button id="btn-close-modal" class="text-slate-400 hover:text-[#04133E] transition">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            
+            <form id="manual-booking-form" class="p-6 space-y-4">
+                <div class="relative group">
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Jugador Registrado</label>
+                    <input 
+                        type="text" 
+                        id="input-user-search" 
+                        placeholder="Escribe para buscar..." 
+                        class="w-full bg-white border border-slate-300 text-[#04133E] rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#3B82f6] outline-none placeholder-slate-400 transition-all"
+                        autocomplete="off"
+                        required
+                    />
+                    <ul id="custom-user-list" class="hidden absolute z-50 w-full bg-white border border-slate-200 rounded-lg mt-1 max-h-48 overflow-y-auto shadow-2xl animate-fade-in"></ul>
+                    <p class="text-[10px] text-slate-400 mt-1">* Debes seleccionar un usuario de la lista.</p>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Cancha</label>
+                    <select id="select-court" required class="w-full bg-white border border-slate-300 text-[#04133E] rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#3B82f6] outline-none">
+                        <option value="">Cargando canchas...</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Fecha</label>
+                    <input type="date" id="input-date" required class="w-full bg-white border border-slate-300 text-[#04133E] rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#3B82f6] outline-none" />
+                </div>
+
+                <div class="w-full">
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Horario de Inicio (Duración: 1h 30m)</label>
+                    <select id="select-start-time" required class="w-full bg-white border border-slate-300 text-[#04133E] rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#3B82f6] outline-none">
+                        <option value="">Cargando horarios...</option>
+                    </select>
+                </div>
+
+                <div id="modal-msg" class="text-center text-sm min-h-[20px]"></div>
+
+                <button type="submit" class="w-full bg-[#3B82f6] hover:bg-blue-900 text-white font-bold py-3 rounded-lg transition shadow-lg mt-2">
+                    Confirmar Reserva
+                </button>
+            </form>
+        </div>
     </div>
 
+    <div id="page-loader" class="fixed inset-0 bg-white flex items-center justify-center z-50">
+        <div class="text-center">
+            <div class="w-12 h-12 border-4 border-[#04133E] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p class="text-slate-500">Iniciando...</p>
+        </div>
+    </div>
 </Layout>
 
 <script>
     import { supabase } from "../lib/supabase";
 
-    const checkAdminAccess = async () => {
-        // 1. ¿Quién es el usuario?
-        const { data: { user } } = await supabase.auth.getUser();
+    // --- 1. VARIABLES DE ESTADO Y TIPOS ---
+    type UserProfile = {
+        id: string;
+        full_name: string;
+        email: string;
+    };
 
-        if (!user) {
-            window.location.href = "/"; // Si no hay usuario, fuera.
-            return;
-        }
+    let currentDate = new Date();
+    let availableUsers: UserProfile[] = [];
 
-        // 2. ¿Qué rol tiene en la base de datos?
-        const { data: profile } = await supabase
-            .from('profiles')
-            .select('role')
-            .eq('id', user.id)
-            .single();
+    // --- 2. REFERENCIAS AL DOM ---
+    const datePicker = document.getElementById('date-picker') as HTMLInputElement;
+    const dateLabel = document.getElementById('date-label');
+    const bookingsList = document.getElementById('bookings-list');
+    const tableLoader = document.getElementById('table-loader');
+    const emptyState = document.getElementById('empty-state');
+    const btnPrev = document.getElementById('btn-prev');
+    const btnNext = document.getElementById('btn-next');
 
-        // 3. Verificación Final
-        if (profile?.role !== 'admin') {
-            // Si NO es admin, lo mandamos al inicio
-            console.warn("Acceso denegado: No eres administrador");
-            window.location.href = "/";
+    // Modal Elements
+    const modal = document.getElementById('modal-overlay');
+    const btnOpenModal = document.getElementById('btn-open-modal');
+    const btnCloseModal = document.getElementById('btn-close-modal');
+    const formModal = document.getElementById('manual-booking-form') as HTMLFormElement;
+    const selectCourt = document.getElementById('select-court') as HTMLSelectElement;
+    const selectStartTime = document.getElementById('select-start-time') as HTMLSelectElement;
+    const inputDate = document.getElementById('input-date') as HTMLInputElement;
+    const modalMsg = document.getElementById('modal-msg');
+    
+    // Buscador
+    const inputSearch = document.getElementById('input-user-search') as HTMLInputElement;
+    const customList = document.getElementById('custom-user-list');
+
+
+    // --- 3. FUNCIONES AUXILIARES ---
+
+    const updateDateLabel = () => {
+        if (!dateLabel) return;
+        const now = new Date();
+        const todayStr = now.toDateString();
+        const currentStr = currentDate.toDateString();
+        
+        // 1. Aquí definimos SOLO la forma y posición (sin colores)
+        const baseClass = "absolute -bottom-3 left-1/2 transform -translate-x-1/2 px-3 py-0.5 text-[10px] font-bold tracking-widest uppercase rounded-full shadow-md z-20 pointer-events-none whitespace-nowrap";
+        
+        if (currentStr === todayStr) {
+            dateLabel.textContent = "HOY";
+            // 2. Aquí aplicamos TU color Celeste PadelBoard + Texto Blanco
+            dateLabel.className = `${baseClass} bg-[#3B82f6] text-white border border-[#3B82f6]`;
         } else {
-            // Si ES admin, mostramos el contenido
-            const content = document.getElementById("admin-content");
-            const loading = document.getElementById("loading-msg");
-            if (content && loading) {
-                loading.style.display = "none";
-                content.classList.remove("hidden");
-            }
+            const options: Intl.DateTimeFormatOptions = { weekday: 'long', day: 'numeric', month: 'short' };
+            dateLabel.textContent = currentDate.toLocaleDateString('es-ES', options);
+            // 3. Aquí el estilo para días normales (Blanco + Texto Gris)
+            dateLabel.className = `${baseClass} bg-white text-slate-500 border border-slate-200`;
         }
     };
 
-    checkAdminAccess();
+    const attachDeleteEvents = () => {
+        const buttons = document.querySelectorAll('.btn-delete');
+        buttons.forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                const button = (e.target as HTMLElement).closest('button');
+                if (!button) return;
+                const id = button.dataset.id;
+                
+                if(confirm("¿Eliminar reserva? Se enviará un correo de cancelación.")) {
+                    const { data: bookingData } = await supabase
+                        .from('bookings')
+                        .select('*, profiles(email, full_name)')
+                        .eq('id', id)
+                        .single();
 
-    // Lógica para borrar reservas (Se mantiene igual)
-    const buttons = document.querySelectorAll('.btn-delete');
-    buttons.forEach(btn => {
-        btn.addEventListener('click', async (e) => {
-            const id = (e.target as HTMLButtonElement).dataset.id;
-            if(confirm("¿Eliminar reserva?")) {
-                const { error } = await supabase.from('bookings').delete().eq('id', id);
-                if (!error) window.location.reload();
+                    const { error } = await supabase.from('bookings').delete().eq('id', id);
+                    
+                    if (!error) {
+                        if (bookingData && bookingData.profiles) {
+                            await fetch('/api/send-email', {
+                                method: 'POST',
+                                headers: {'Content-Type': 'application/json'},
+                                body: JSON.stringify({
+                                    type: 'cancellation',
+                                    userEmail: bookingData.profiles.email,
+                                    userName: bookingData.profiles.full_name,
+                                    date: bookingData.date,
+                                    time: bookingData.start_time,
+                                    courtName: "Cancha" 
+                                })
+                            });
+                        }
+                        loadBookings(); 
+                        // Actualizar modal si está abierto
+                        if (modal && !modal.classList.contains('hidden')) {
+                           updateModalAvailability();
+                        }
+                    } else {
+                        alert("Error al borrar: " + error.message);
+                    }
+                }
+            });
+        });
+    };
+
+    const loadBookings = async () => {
+        if (!bookingsList || !tableLoader || !emptyState || !dateLabel) return;
+        
+        tableLoader.classList.remove('hidden');
+        emptyState.classList.add('hidden');
+        bookingsList.innerHTML = '';
+
+        const offset = currentDate.getTimezoneOffset();
+        const localDate = new Date(currentDate.getTime() - (offset*60*1000));
+        const dateStr = localDate.toISOString().split('T')[0];
+        
+        datePicker.value = dateStr;
+        updateDateLabel();
+
+        const { data: bookings, error } = await supabase
+            .from('bookings')
+            .select(`*, courts (name), profiles (full_name, email, phone, avatar_url)`)
+            .eq('date', dateStr)
+            .order('start_time', { ascending: true });
+
+        tableLoader.classList.add('hidden');
+
+        if (error) { console.error(error); return; }
+
+        if (!bookings || bookings.length === 0) {
+            emptyState.classList.remove('hidden');
+        } else {
+            bookings.forEach((booking: any) => {
+                const row = document.createElement('tr');            
+                row.className = "hover:bg-blue-50 transition duration-150 group animate-fade-in border-b border-slate-50 last:border-0";
+                const avatar = booking.profiles?.avatar_url || null;
+                const initial = booking.profiles?.full_name?.charAt(0).toUpperCase() || "U";
+                const name = booking.profiles?.full_name || booking.guest_name || "Invitado";
+                const email = booking.profiles?.email || "";
+                const phone = booking.profiles?.phone ? `<span class="bg-slate-100 px-1.5 rounded text-[#04133E] ml-2 text-xs">📱 ${booking.profiles.phone}</span>` : "";
+
+                row.innerHTML = `
+                    <td class="p-4 align-top">
+                        <div class="font-mono text-white text-base font-bold bg-[#3B82f6] inline-block px-3 py-1 rounded shadow-sm">
+                            ${booking.start_time.slice(0,5)}
+                        </div>
+                        <div class="text-xs text-slate-500 mt-1 pl-1 font-medium">hasta ${booking.end_time.slice(0,5)}</div>
+                    </td>
+                    <td class="p-4 text-[#04133E] font-bold align-middle">
+                        ${booking.courts?.name || "Cancha General"}
+                    </td>
+                    <td class="p-4 align-middle">
+                        <div class="flex items-center gap-3">
+                            ${avatar 
+                                ? `<img src="${avatar}" class="w-10 h-10 rounded-full border border-slate-200 object-cover shadow-sm">`
+                                : `<div class="w-10 h-10 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center font-bold border border-slate-300 shadow-sm">${initial}</div>`
+                            }
+                            <div>
+                                <div class="font-bold text-[#04133E] text-base leading-tight">${name}</div>
+                                <div class="text-xs text-slate-500 flex items-center mt-1">
+                                    ${email} ${phone}
+                                </div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="p-4 text-right align-middle">
+                        <button 
+                            data-id="${booking.id}"
+                            class="btn-delete text-red-500 hover:text-white hover:bg-red-500 px-3 py-1.5 rounded border border-red-200 hover:border-red-500 transition-all text-xs font-bold shadow-sm"
+                        >
+                            Cancelar
+                        </button>
+                    </td>
+                `;
+                bookingsList.appendChild(row);
+            });
+            attachDeleteEvents();
+        }
+    };
+
+
+    // --- 4. LÓGICA INTELIGENTE DEL MODAL (Bloqueo de Horas) ---
+
+    // Esta función carga las horas PERO elimina las ocupadas
+    // REEMPLAZA LA FUNCIÓN updateModalAvailability POR ESTA:
+    const updateModalAvailability = async () => {
+        if (!inputDate || !selectStartTime) return;
+        
+        const selectedDate = inputDate.value;
+        selectStartTime.innerHTML = '<option value="">Cargando disponibilidad...</option>';
+
+        // 1. Consultar reservas existentes
+        const { data: busyBookings } = await supabase
+            .from('bookings')
+            .select('start_time')
+            .eq('date', selectedDate);
+        
+        const busyTimes = busyBookings?.map((b: any) => b.start_time.slice(0,5)) || [];
+
+        // 2. Generar horarios
+        selectStartTime.innerHTML = '<option value="">-- Seleccionar Hora --</option>';
+        let startHour = 7; 
+        let startMin = 0;
+        
+        while (startHour < 23) {
+            const hh = startHour.toString().padStart(2, '0');
+            const mm = startMin.toString().padStart(2, '0');
+            const timeStr = `${hh}:${mm}`;
+            
+            const totalMins = startHour * 60 + startMin + 90;
+            const endH = Math.floor(totalMins / 60);
+            const endM = totalMins % 60;
+            const endStr = `${endH.toString().padStart(2, '0')}:${endM.toString().padStart(2, '0')}`;
+
+            const opt = document.createElement('option');
+            opt.value = timeStr;
+
+            // --- LÓGICA VISUAL ---
+            if (busyTimes.includes(timeStr)) {
+                // Si está ocupado: Lo mostramos pero DESACTIVADO
+                opt.textContent = `${timeStr} - ⛔ No Disponible`;
+                opt.disabled = true; 
+                // Nota: Algunos navegadores permiten estilos aquí, otros no.
+                opt.style.color = "#ff4d4d"; 
+            } else {
+                // Si está libre: Normal
+                opt.textContent = `${timeStr} - ${endStr}`;
+            }
+
+            selectStartTime.appendChild(opt);
+
+            startMin += 30;
+            if (startMin >= 60) { startMin -= 60; startHour += 1; }
+            startHour += 1; 
+        }
+    };
+
+    const loadModalOptions = async () => {
+        // Cargar Usuarios
+        const { data: users } = await supabase.from('profiles').select('id, full_name, email').order('full_name');
+        if (users) availableUsers = users; 
+
+        // Cargar Canchas
+        const { data: courts } = await supabase.from('courts').select('id, name');
+        if (courts && selectCourt) {
+            selectCourt.innerHTML = ''; 
+            courts.forEach(c => {
+                const opt = document.createElement('option');
+                opt.value = c.id;
+                opt.textContent = c.name;
+                selectCourt.appendChild(opt);
+            });
+        }
+        // Ya no generamos horas aquí, lo hacemos en updateModalAvailability al abrir o cambiar fecha
+    };
+
+    // Eventos del Modal
+    btnOpenModal?.addEventListener('click', () => {
+        if(modal && inputDate) {
+            modal.classList.remove('hidden');
+            inputDate.value = datePicker.value; // Usar fecha actual de la agenda
+            if(modalMsg) modalMsg.textContent = "";
+            if(inputSearch) inputSearch.value = "";
+            if(customList) customList.classList.add('hidden');
+            
+            // Cargar disponibilidad para esa fecha
+            updateModalAvailability();
+        }
+    });
+    
+    // Si cambio la fecha DENTRO del modal, recargar horas disponibles
+    inputDate?.addEventListener('change', () => {
+        updateModalAvailability();
+    });
+
+    btnCloseModal?.addEventListener('click', () => {
+        modal?.classList.add('hidden');
+    });
+
+    formModal?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        if(!modalMsg) return;
+
+        const valTyped = inputSearch.value;
+        const foundUser = availableUsers.find(u => `${u.full_name || 'Sin Nombre'} (${u.email})` === valTyped);
+
+        if (!foundUser) {
+            modalMsg.textContent = "⚠️ Error: Debes seleccionar un usuario válido de la lista.";
+            modalMsg.className = "text-center text-sm text-yellow-400 font-bold";
+            return;
+        }
+
+        modalMsg.textContent = "Guardando y enviando correo...";
+        modalMsg.className = "text-center text-sm text-[#3B82f6] animate-pulse";
+
+        const startTime = selectStartTime.value;
+        if (!startTime) {
+             modalMsg.textContent = "⚠️ Error: Selecciona un horario válido.";
+             return;
+        }
+
+        const [h, m] = startTime.split(':').map(Number);
+        const d = new Date(); d.setHours(h); d.setMinutes(m + 90);
+        const endH = d.getHours().toString().padStart(2, '0');
+        const endM = d.getMinutes().toString().padStart(2, '0');
+        const endTime = `${endH}:${endM}`;
+
+        const { error } = await supabase.from('bookings').insert({
+            user_id: foundUser.id,
+            court_id: selectCourt.value,
+            date: inputDate.value,
+            start_time: startTime,
+            end_time: endTime
+        });
+
+        if(error) {
+            modalMsg.textContent = "❌ Error: " + error.message;
+            modalMsg.className = "text-center text-sm text-red-400";
+        } else {
+            const courtName = selectCourt.options[selectCourt.selectedIndex].text;
+            await fetch('/api/send-email', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    type: 'confirmation',
+                    userEmail: foundUser.email,
+                    userName: foundUser.full_name,
+                    date: inputDate.value,
+                    time: startTime,
+                    courtName: courtName
+                })
+            });
+
+            modalMsg.textContent = "✅ ¡Reserva creada y notificada!";
+            setTimeout(() => {
+                modal?.classList.add('hidden');
+                loadBookings();
+                formModal.reset();
+                inputSearch.value = "";
+            }, 1500);
+        }
+    });
+
+    // --- 5. LÓGICA BUSCADOR (Igual que antes) ---
+    if (inputSearch && customList) {
+        inputSearch.addEventListener('input', (e) => {
+            const term = (e.target as HTMLInputElement).value.toLowerCase();
+            if (term.length === 0) {
+                customList.classList.add('hidden');
+                return;
+            }
+            const matches = availableUsers.filter(u => 
+                (u.full_name || '').toLowerCase().includes(term) || 
+                (u.email || '').toLowerCase().includes(term)
+            );
+            customList.innerHTML = '';
+            if (matches.length > 0) {
+                customList.classList.remove('hidden');
+                matches.forEach(u => {
+                    const li = document.createElement('li');
+                    li.className = "px-4 py-2 hover:bg-[#3B82f6]/90 hover:text-white cursor-pointer text-[#04133E] text-sm transition-colors border-b border-slate-100 last:border-0 font-medium";
+                    const label = `${u.full_name || 'Sin Nombre'} (${u.email})`;
+                    li.textContent = label;
+                    li.addEventListener('click', () => {
+                        inputSearch.value = label;
+                        customList.classList.add('hidden');
+                    });
+                    customList.appendChild(li);
+                });
+            } else {
+                customList.classList.remove('hidden');
+                customList.innerHTML = '<li class="px-4 py-2 text-slate-500 text-xs italic">No se encontraron usuarios</li>';
             }
         });
+        document.addEventListener('click', (e) => {
+            if (!inputSearch.contains(e.target as Node) && !customList.contains(e.target as Node)) {
+                customList.classList.add('hidden');
+            }
+        });
+    }
+
+    // --- 6. NAVEGACIÓN (Igual que antes) ---
+    btnPrev?.addEventListener('click', () => {
+        currentDate.setDate(currentDate.getDate() - 1);
+        loadBookings();
     });
+    btnNext?.addEventListener('click', () => {
+        currentDate.setDate(currentDate.getDate() + 1);
+        loadBookings();
+    });
+    datePicker?.addEventListener('change', (e) => {
+        const val = (e.target as HTMLInputElement).value;
+        if(val) {
+            const [y, m, d] = val.split('-').map(Number);
+            currentDate = new Date(y, m - 1, d);
+            loadBookings();
+        }
+    });
+
+    // --- 7. INICIALIZACIÓN ---
+    const init = async () => {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) { window.location.href = "/"; return; }
+        const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
+        if (profile?.role !== 'admin') {
+            window.location.href = "/";
+        } else {
+            const content = document.getElementById("admin-content");
+            const pageLoader = document.getElementById("page-loader");
+            if (content && pageLoader) {
+                pageLoader.style.display = "none";
+                content.classList.remove("hidden");
+                loadModalOptions();
+                loadBookings();
+            }
+        }
+    };
+    init();
 </script>

@@ -4,12 +4,17 @@ import Layout from '../layouts/Layout.astro';
 ---
 
 <Layout title="Mis Reservas">
-    <div class="max-w-2xl mx-auto mt-8">
-        <h1 class="text-3xl font-bold text-white mb-2">Mis Reservas</h1>
-        <p class="text-slate-400 mb-8">Gestiona tus próximos partidos.</p>
+    <div class="max-w-3xl mx-auto mt-8 px-4">
+        <div class="border-l-4 border-[#3B82f6] pl-4 mb-8">
+            <h1 class="text-3xl font-bold text-[#04133E] mb-1">Mis Reservas</h1>
+            <p class="text-slate-500">Gestiona tus próximos partidos.</p>
+        </div>
 
         <div id="bookings-container" class="space-y-4">
-            <p class="text-slate-500 animate-pulse">Cargando tus partidos...</p>
+            <div class="text-center py-10">
+                <div class="w-10 h-10 border-4 border-[#04133E] border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+                <p class="text-slate-400 animate-pulse">Cargando tus partidos...</p>
+            </div>
         </div>
     </div>
 </Layout>
@@ -27,11 +32,11 @@ import Layout from '../layouts/Layout.astro';
     };
 
     const loadBookings = async () => {
-        // 1. Obtener usuario en el NAVEGADOR (Aquí sí funciona)
+        // 1. Obtener usuario en el NAVEGADOR
         const { data: { user } } = await supabase.auth.getUser();
 
         if (!user) {
-            window.location.href = "/login"; // Si no hay sesión, al login
+            window.location.href = "/login";
             return;
         }
 
@@ -39,28 +44,29 @@ import Layout from '../layouts/Layout.astro';
         const { data: bookings, error } = await supabase
             .from('bookings')
             .select('*, courts(name)')
-            .eq('user_id', user.id) // Filtro de seguridad
+            .eq('user_id', user.id)
             .order('date', { ascending: true })
             .order('start_time', { ascending: true });
 
         if (error) {
-            container.innerHTML = `<p class="text-red-400">Error cargando datos: ${error.message}</p>`;
+            container.innerHTML = `<p class="text-red-500 bg-red-50 p-4 rounded border border-red-100">Error cargando datos: ${error.message}</p>`;
             return;
         }
 
         // 3. Generar el HTML manualmente (Client-Side Rendering)
         if (!bookings || bookings.length === 0) {
             container.innerHTML = `
-                <div class="text-center py-12 bg-slate-800/50 rounded-lg border border-dashed border-slate-700">
-                    <p class="text-slate-500 mb-4">No tienes reservas activas.</p>
-                    <a href="/" class="bg-green-500 text-slate-900 font-bold py-2 px-4 rounded hover:bg-green-400 transition">
+                <div class="text-center py-16 bg-white rounded-xl border-2 border-dashed border-slate-200">
+                    <p class="text-[#04133E] font-medium mb-2 text-lg">No tienes reservas activas.</p>
+                    <p class="text-slate-400 text-sm mb-6">¿Te hace falta un partido?</p>
+                    <a href="/" class="bg-[#3B82f6] text-white font-bold py-3 px-6 rounded-lg hover:bg-blue-900 transition shadow-lg">
                         Reservar una cancha
                     </a>
                 </div>`;
             return;
         }
 
-        // Construimos la lista
+        // Construimos la lista con ESTILO NUEVO (Blanco/Navy)
         container.innerHTML = bookings.map((item: any) => {
             // 1. Calcular fechas
             const bookingDate = new Date(`${item.date}T${item.start_time}`);
@@ -70,8 +76,8 @@ import Layout from '../layouts/Layout.astro';
             const diffInMs = bookingDate.getTime() - now.getTime();
             const diffInHours = diffInMs / (1000 * 60 * 60);
 
-            const passed = diffInHours < 0; // Ya pasó el partido
-            const isTooLate = diffInHours < 24 && !passed; // Faltan menos de 24h
+            const passed = diffInHours < 0; // Ya pasó
+            const isTooLate = diffInHours < 24 && !passed; // Menos de 24h
 
             const dateFormatted = new Date(item.date + 'T12:00:00').toLocaleDateString('es-ES', { 
                 weekday: 'long', 
@@ -79,44 +85,72 @@ import Layout from '../layouts/Layout.astro';
                 month: 'short' 
             });
             
-            // Renderizamos
+            // Renderizamos con NUEVO DISEÑO
             return `
-                <div class="p-4 rounded-lg border flex justify-between items-center transition 
-                    ${passed ? 'bg-slate-800/50 border-slate-700 opacity-60' : 'bg-slate-800 border-slate-600'}">
+                <div class="p-6 rounded-2xl border transition group relative overflow-hidden flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6
+                    ${passed ? 'bg-slate-50 border-slate-100 opacity-60' : 'bg-white border-slate-200 hover:border-[#3B82f6] hover:shadow-lg shadow-sm'}">
                     
-                    <div>
-                        <div class="flex items-center gap-2 mb-1">
-                            <span class="font-bold text-lg text-white capitalize">${dateFormatted}</span>
-                            ${passed ? '<span class="text-xs bg-gray-700 text-gray-400 px-2 py-0.5 rounded">Finalizado</span>' : ''}
+                    <div class="flex-1">
+                        <div class="flex items-center gap-4 mb-4">
+                            <div class="bg-blue-50 text-[#3B82f6] p-2.5 rounded-xl">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
+                                </svg>
+                            </div>
+                            <div class="flex flex-col justify-center">
+                                <h3 class="font-bold text-xl text-[#04133E] capitalize leading-none tracking-tight">
+                                    ${dateFormatted}
+                                </h3>
+                                
+                                ${passed 
+                                    ? '<span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mt-1">Partido Finalizado</span>' 
+                                    : '<span class="text-[10px] font-bold uppercase tracking-wider text-[#3B82f6] mt-1">Reserva Confirmada</span>'
+                                }
+                            </div>
                         </div>
-                        <p class="text-green-400 font-mono text-lg">
-                            ${item.start_time.slice(0,5)} - ${item.end_time.slice(0,5)}
-                        </p>
-                        <p class="text-sm text-slate-400 mt-1">📍 ${item.courts?.name || 'Cancha'}</p>
                         
-                        ${isTooLate ? '<p class="text-xs text-yellow-500 mt-2">⚠️ Menos de 24h para cancelar</p>' : ''}
+                        <div class="pl-0 sm:pl-[52px]">
+                            <div class="flex items-baseline gap-2 mb-1">
+                                <span class="text-3xl font-black text-[#04133E]">
+                                    ${item.start_time.slice(0,5)}
+                                </span>
+                                <span class="text-slate-400 font-medium text-sm">a ${item.end_time.slice(0,5)}</span>
+                            </div>
+                            
+                            <div class="inline-flex items-center gap-1.5 bg-slate-100 px-3 py-1 rounded-full border border-slate-200 mt-1">
+                                <span class="text-xs">📍</span>
+                                <span class="text-xs font-bold text-slate-600 uppercase tracking-wide">
+                                    ${item.courts?.name || 'Club Naval'}
+                                </span>
+                            </div>
+
+                            ${isTooLate ? '<p class="text-xs text-orange-500 mt-3 font-bold flex items-center gap-1">⚠️ Menos de 24h para cancelar</p>' : ''}
+                        </div>
                     </div>
 
-                    ${!passed && !isTooLate ? `
-                        <button 
-                            data-id="${item.id}"
-                            class="btn-cancel text-sm text-red-400 hover:text-white hover:bg-red-500/20 border border-red-500/30 px-3 py-2 rounded transition"
-                        >
-                            Cancelar
-                        </button>
-                    ` : ''}
-                    
-                    ${isTooLate ? `
-                        <button disabled class="text-xs text-slate-500 border border-slate-700 px-3 py-2 rounded cursor-not-allowed opacity-50">
-                            Bloqueado
-                        </button>
-                    ` : ''}
+                    <div class="w-full sm:w-auto pt-4 sm:pt-0 border-t sm:border-t-0 border-slate-100 mt-2 sm:mt-0 flex sm:block justify-end">
+                        ${!passed && !isTooLate ? `
+                            <button 
+                                data-id="${item.id}"
+                                class="btn-cancel w-full sm:w-auto group/btn flex items-center justify-center gap-2 text-sm font-bold text-red-500 hover:text-white bg-red-50 hover:bg-red-500 border border-red-100 hover:border-red-500 px-5 py-3 rounded-xl transition-all"
+                            >
+                                <span>Cancelar</span>
+                            </button>
+                        ` : ''}
+                        
+                        ${isTooLate ? `
+                            <div class="w-full sm:w-auto text-center px-4 py-2 bg-slate-50 rounded-lg border border-slate-100">
+                                <span class="text-xs font-bold text-slate-400 block">Cancelación</span>
+                                <span class="text-xs font-bold text-slate-400 block">Bloqueada</span>
+                            </div>
+                        ` : ''}
+                    </div>
 
                 </div>
             `;
         }).join('');
 
-        // 4. Reconectar los botones de cancelar (Porque el HTML es nuevo)
+        // 4. Reconectar los botones de cancelar
         attachCancelListeners();
     };
 
@@ -128,16 +162,17 @@ import Layout from '../layouts/Layout.astro';
                 const id = button.dataset.id;
                 
                 if(confirm("¿Seguro que quieres cancelar este partido? Se liberará el horario.")) {
-                    button.textContent = "Cancelando...";
+                    const originalText = button.textContent;
+                    button.textContent = "Procesando...";
                     button.disabled = true;
 
                     const { error } = await supabase.from('bookings').delete().eq('id', id);
 
                     if (!error) {
-                        loadBookings(); // Recargamos la lista sin refrescar página
+                        loadBookings(); 
                     } else {
                         alert("Error: " + error.message);
-                        button.textContent = "Cancelar";
+                        button.textContent = originalText;
                         button.disabled = false;
                     }
                 }
@@ -145,6 +180,5 @@ import Layout from '../layouts/Layout.astro';
         });
     };
 
-    // Arrancamos
     loadBookings();
 </script>

@@ -7,12 +7,6 @@ const { cookies } = Astro;
 const accessToken = cookies.get("sb-access-token");
 const refreshToken = cookies.get("sb-refresh-token");
 
-// Si usamos cookies en el futuro configuraremos esto mejor, 
-// pero para este MVP vamos a verificar la sesión del lado del cliente o usar una API simple.
-// NOTA: Para simplificar tu curva de aprendizaje hoy, 
-// vamos a dejar que la pagina cargue y verificar la sesión abajo en el script,
-// pero haremos una consulta a la DB para traer la cancha.
-
 // 2. DATOS: Traer las canchas de la Base de Datos
 const { data: courts, error } = await supabase
   .from('courts')
@@ -26,31 +20,31 @@ const activeCourts = courts || [];
 
 <Layout title="Reservas" userEmail="Usuario">
     
-    <div class="mb-8 mt-4">
-        <h1 class="text-3xl font-bold text-white">Panel de Reservas</h1>
-        <p class="text-slate-400">Selecciona una cancha para ver disponibilidad.</p>
+    <div class="mb-8 mt-4 border-l-4 border-[#3B82f6] pl-4">
+        <h1 class="text-3xl font-bold text-[#04133E]">Panel de Reservas</h1>
+        <p class="text-slate-500">Selecciona una cancha para ver disponibilidad.</p>
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         {activeCourts.map((court) => (
-            <div class="bg-slate-800 p-6 rounded-lg border border-slate-700 shadow-lg hover:border-green-500/50 transition cursor-pointer group">
+            <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition cursor-pointer group">
                 <div class="flex justify-between items-start">
                     <div>
-                        <h2 class="text-xl font-bold text-white group-hover:text-green-400 transition">{court.name}</h2>
-                        <p class="text-sm text-slate-400 mt-1">Disponible para reservar</p>
+                        <h2 class="text-xl font-bold text-[#04133E]">{court.name}</h2>
+                        <p class="text-sm text-slate-500 mt-1">Cancha de Pádel</p>
                     </div>
-                    <span class="bg-green-500/20 text-green-400 text-xs font-bold px-2 py-1 rounded">Activa</span>
                 </div>
                 
-                <a href={`/booking/${court.id}`} class="mt-4 block w-full text-center bg-slate-700 hover:bg-green-600 hover:text-white text-slate-200 py-2 rounded transition font-medium">
+                <a href={`/booking/${court.id}`} class="mt-6 block w-full text-center bg-[#3B82f6] hover:bg-blue-900 text-white py-3 rounded-lg transition font-bold shadow-lg shadow-blue-900/10">
 					Ver Calendario
 				</a>
             </div>
         ))}
 
         {activeCourts.length === 0 && (
-            <div class="p-4 bg-yellow-500/10 border border-yellow-500/20 text-yellow-200 rounded">
-                No se encontraron canchas activas.
+            <div class="p-6 bg-yellow-50 border border-yellow-200 text-yellow-800 rounded-lg text-center">
+                <p class="font-bold">⚠️ No se encontraron canchas activas.</p>
+                <p class="text-sm mt-1">Contacta al administrador.</p>
             </div>
         )}
     </div>
@@ -60,7 +54,7 @@ const activeCourts = courts || [];
 <script>
     import { supabase } from "../lib/supabase";
 
-    // Verificación de seguridad en el navegador (Client-Side Auth Guard)
+    // Verificación de seguridad en el navegador
     async function checkSession() {
         const { data: { session } } = await supabase.auth.getSession();
         if (!session) {
