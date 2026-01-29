@@ -143,7 +143,7 @@ export default function BookingCalendar({ courtId }) {
     <div className="flex flex-col gap-6 w-full max-w-4xl mx-auto">
       
       {/* --- SELECTOR DE FECHA (Estilo Navy Clean) --- */}
-      <div className="flex items-center justify-between bg-white p-4 rounded-xl shadow-sm border-2 border-[#3B82f6] mb-6">
+      <div className="flex items-center justify-between bg-white p-2 rounded-xl shadow-sm border-2 border-[#3B82f6]">
         
         {/* Flecha Izquierda (Blanca con borde Navy) */}
         <button 

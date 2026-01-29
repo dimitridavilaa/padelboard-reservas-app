@@ -2,6 +2,7 @@
 import '../app.css';
 const { title } = Astro.props;
 const { pathname } = Astro.url;
+const currentPath = pathname.replace(/\/$/, "") || "/";
 ---
 
 <!DOCTYPE html>
@@ -48,23 +49,18 @@ const { pathname } = Astro.url;
                             Salir
                         </button>
                     </div>
-
-                    {/* Botón Ingresar (Si no hay sesión) */}
-                    {pathname !== '/login' && (
-                        <a id="btn-login-desktop" href="/login" class="hidden text-sm bg-[#3B82f6] hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-bold transition shadow-lg shadow-blue-500/20">
-                            Ingresar
-                        </a>
-                    )}
                 </div>
 
-                {/* --- 2. BOTÓN HAMBURGUESA (Visible solo en Móvil) --- */}
-                <div class="flex items-center md:hidden">
-                    <button id="mobile-menu-btn" class="text-slate-300 hover:text-white focus:outline-none">
-                        <svg class="h-8 w-8" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
-                        </svg>
-                    </button>
-                </div>
+                {/* --- 2. BOTÓN HAMBURGUESA (Ocultar en Login) --- */}
+                {currentPath !== '/login' && (
+                    <div class="flex items-center md:hidden">
+                        <button id="mobile-menu-btn" class="text-slate-300 hover:text-white focus:outline-none">
+                            <svg class="h-8 w-8" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                            </svg>
+                        </button>
+                    </div>
+                )}
             </div>
         </div>
 
@@ -92,12 +88,6 @@ const { pathname } = Astro.url;
                     </button>
                 </div>
 
-                {/* Botón Ingresar Móvil */}
-                {pathname !== '/login' && (
-                    <a id="btn-login-mobile" href="/login" class="hidden block w-full text-center bg-[#3B82f6] text-white px-4 py-3 rounded-lg font-bold shadow-lg">
-                        Ingresar
-                    </a>
-                )}
             </div>
         </div>
     </nav>
@@ -106,14 +96,13 @@ const { pathname } = Astro.url;
     <main class="flex-grow p-4 max-w-4xl mx-auto w-full animate-fade-in">
         
         {/* BOTÓN VOLVER GLOBAL */}
-        {pathname !== '/' && pathname !== '/login' && (
-            <div class="mb-6">
+        {currentPath !== '/' && currentPath !== '/login' && (
+            <div class="mb-2">
                 <a href="/" class="inline-flex items-center gap-2 text-sm font-bold text-slate-400 hover:text-[#3B82f6] transition-colors group">
-                    <div class="p-1 bg-white border border-slate-200 rounded-lg group-hover:border-[#3B82f6] transition shadow-sm">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4 group-hover:-translate-x-0.5 transition-transform">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
-                        </svg>
-                    </div>
+                    {/* Flecha directa, sin rectángulo contenedor */}
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4 group-hover:-translate-x-1 transition-transform">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+                    </svg>
                     <span>Volver al inicio</span>
                 </a>
             </div>
