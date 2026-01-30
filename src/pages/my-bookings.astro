@@ -179,7 +179,7 @@ import Layout from '../layouts/Layout.astro';
                     const { data: { user } } = await supabase.auth.getUser();
 
                     // 3. Borrar de la Base de Datos
-                    const { error } = await supabase.from('bookings').delete().eq('id', id);
+                    const { error } = await supabase.from('ngs').delete().eq('id', id);
 
                     if (!error) {
                         // 4. ✅ ÉXITO: ENVIAR CORREO

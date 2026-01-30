@@ -35,8 +35,22 @@ const activeCourts = courts || [];
                     </div>
                 </div>
                 
-                <a href={`/booking/${court.id}`} class="mt-6 block w-full text-center bg-[#3B82f6] hover:bg-blue-900 text-white py-3 rounded-lg transition font-bold shadow-lg shadow-blue-900/10">
-					Ver Calendario
+                {/* BOTÓN CON EFECTO DE CARGA */}
+                <a 
+                    href={`/booking/${court.id}`} 
+                    class="btn-calendar mt-6 flex items-center justify-center gap-2 w-full text-center bg-[#3B82f6] hover:bg-blue-900 text-white py-3 rounded-lg transition font-bold shadow-lg shadow-blue-900/10 active:scale-95 group-hover:shadow-blue-500/20"
+                >
+                    {/* Texto Normal (Se oculta al hacer click) */}
+                    <span class="btn-text">Ver Calendario</span>
+                    
+                    {/* Estado Cargando (Aparece al hacer click) */}
+                    <div class="btn-loader hidden flex items-center gap-2">
+                        <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <span>Cargando...</span>
+                    </div>
 				</a>
             </div>
         ))}
@@ -58,9 +72,29 @@ const activeCourts = courts || [];
     async function checkSession() {
         const { data: { session } } = await supabase.auth.getSession();
         if (!session) {
-            // Si no hay sesión, patada al login
             window.location.href = "/login";
         }
     }
     checkSession();
+
+    // --- NUEVO: LÓGICA DE BOTONES DE CARGA ---
+    // Seleccionamos TODOS los botones de calendario
+    const buttons = document.querySelectorAll('.btn-calendar');
+
+    buttons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            // Buscamos los elementos DENTRO del botón que fue clickeado
+            const textSpan = btn.querySelector('.btn-text');
+            const loaderDiv = btn.querySelector('.btn-loader');
+
+            // Hacemos el cambio visual
+            if (textSpan) textSpan.classList.add('hidden'); // Ocultar "Ver Calendario"
+            if (loaderDiv) loaderDiv.classList.remove('hidden'); // Mostrar Spinner
+
+            // Deshabilitar el botón para evitar doble clic y dar efecto visual
+            btn.style.opacity = '0.8';
+            btn.style.pointerEvents = 'none';
+            btn.style.cursor = 'wait';
+        });
+    });
 </script>
