@@ -22,8 +22,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.png', 'apple-touch-icon.png'], // Asegúrate que coincida con tus archivos
       manifest: {
-        name: 'PadelBoard',
-        short_name: 'PadelBoard',
+        name: 'Reservas PadelBoard',
+        short_name: '(PB)Reservas',
         description: 'Reserva tu cancha de Padel fácilmente.',
         theme_color: '#04133E',
         background_color: '#f8fafc',
