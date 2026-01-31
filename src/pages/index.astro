@@ -1,6 +1,7 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import { supabase } from '../lib/supabase';
+import IosInstallPrompt from '../components/IosInstallPrompt.astro';
 
 // 1. SEGURIDAD (SSR): Verificamos si hay usuario en el servidor
 const { cookies } = Astro;
@@ -62,6 +63,8 @@ const activeCourts = courts || [];
             </div>
         )}
     </div>
+
+    <IosInstallPrompt />
 
 </Layout>
 

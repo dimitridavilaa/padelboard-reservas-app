@@ -1,0 +1,87 @@
+---
+---
+<div id="ios-prompt" class="hidden fixed bottom-4 left-4 right-4 bg-white/95 backdrop-blur shadow-2xl border border-slate-200 p-4 rounded-2xl z-50 animate-fade-in-up">
+    <div class="flex justify-between items-start">
+        <div class="flex-1">
+            <h3 class="text-[#04133E] font-bold text-lg mb-1">Instalar App</h3>
+            <p class="text-sm text-slate-500 mb-3">Agrega PadelBoard a tu inicio para una experiencia de pantalla completa.</p>
+            
+            <div class="flex flex-col gap-2 text-sm text-slate-700 font-medium">
+                <div class="flex items-center gap-3">
+                    <span class="bg-slate-100 p-1.5 rounded text-[#007AFF]">
+                        {/* Icono Share de Apple */}
+                        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path>
+                            <polyline points="16 6 12 2 8 6"></polyline>
+                            <line x1="12" y1="2" x2="12" y2="15"></line>
+                        </svg>
+                    </span>
+                    <span>1. Toca el botón <b>Compartir</b></span>
+                </div>
+                <div class="flex items-center gap-3">
+                    <span class="bg-slate-100 p-1.5 rounded text-slate-600">
+                        {/* Icono Plus de Apple */}
+                        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                            <line x1="12" y1="8" x2="12" y2="16"></line>
+                            <line x1="8" y1="12" x2="16" y2="12"></line>
+                        </svg>
+                    </span>
+                    <span>2. Selecciona <b>Agregar a Inicio</b></span>
+                </div>
+            </div>
+        </div>
+        
+        <button id="close-ios-prompt" class="text-slate-400 hover:text-slate-600 p-1">
+            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+        </button>
+    </div>
+    
+    {/* Flechita decorativa apuntando abajo (hacia la barra del navegador) */}
+    <div class="absolute -bottom-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-white rotate-45 border-b border-r border-slate-200"></div>
+</div>
+
+<script>
+    // Lógica para detectar si es iPhone y NO está instalada
+    const isIos = () => {
+        const userAgent = window.navigator.userAgent.toLowerCase();
+        return /iphone|ipad|ipod/.test(userAgent);
+    };
+
+    const isInStandaloneMode = () => {
+        return ('standalone' in window.navigator) && (window.navigator.standalone);
+    };
+
+    const prompt = document.getElementById('ios-prompt');
+    const closeBtn = document.getElementById('close-ios-prompt');
+
+    // Revisar si ya lo cerró antes (para no ser molestos)
+    const hasClosedPrompt = localStorage.getItem('iosPromptDismissed');
+
+    if (isIos() && !isInStandaloneMode() && !hasClosedPrompt && prompt) {
+        // Mostrar después de 2 segundos para no abrumar al entrar
+        setTimeout(() => {
+            prompt.classList.remove('hidden');
+        }, 2000);
+    }
+
+    if (closeBtn && prompt) {
+        closeBtn.addEventListener('click', () => {
+            prompt.classList.add('hidden');
+            // Guardar en memoria para no volver a mostrar por un tiempo
+            localStorage.setItem('iosPromptDismissed', 'true');
+        });
+    }
+</script>
+
+<style>
+    .animate-fade-in-up {
+        animation: fadeInUp 0.5s ease-out forwards;
+    }
+    @keyframes fadeInUp {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+</style>
